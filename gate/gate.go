@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/lixxix/lingo/logger"
@@ -170,9 +171,15 @@ func (g *Gate) OnServerMessage(target uint32, data []byte, client utils.IServerC
 	}
 
 }
-func (g *Gate) OnServerDisconect(server utils.IServerConn) {
 
+func (g *Gate) OnServerDisconect(server utils.IServerConn) {
+	go func() {
+		time.Sleep(time.Second * 2)
+		logger.LOG.Info("Relink center")
+		server.ReConnect()
+	}()
 }
+
 func (g *Gate) OnServerConnected(server utils.IServerConn) {
 	if server.GetServer() == utils.CenterServer {
 		g.ServerID = server.GetId()

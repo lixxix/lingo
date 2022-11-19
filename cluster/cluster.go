@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/lixxix/lingo/logger"
 	"github.com/lixxix/lingo/message"
@@ -77,7 +78,14 @@ func (clus *Cluster) ServeClient(conn net.Conn) {
 }
 
 func (clus *Cluster) OnServerMessage(target uint32, data []byte, server utils.IServerConn) {}
-func (clus *Cluster) OnServerDisconect(server utils.IServerConn)                           {}
+func (clus *Cluster) OnServerDisconect(server utils.IServerConn) {
+	// go func
+	go func() {
+		time.Sleep(time.Second * 2)
+		logger.LOG.Info("Relink center")
+		server.ReConnect()
+	}()
+}
 func (clus *Cluster) OnServerConnected(server utils.IServerConn) {
 	fmt.Println("cluster center connected", server.GetServer(), server.GetId())
 	if server.GetServer() == utils.CenterServer {
