@@ -1,12 +1,15 @@
 package center
 
 import (
+	"fmt"
+
+	"github.com/lixxix/lingo/logger"
 	"github.com/lixxix/lingo/message"
 	"github.com/lixxix/lingo/utils"
 )
 
 /*
-	用于管理和分配服务器连接
+用于管理和分配服务器连接
 */
 type Servers struct {
 	servers map[uint32]*Server
@@ -29,7 +32,19 @@ func (s *Servers) GetServer(sId uint32) *Server {
 
 func (s *Servers) PushServer(client utils.IServerLink) uint32 {
 	server := s.GetServer(client.GetServer())
-	return server.PushServer(client)
+	if client.GetId() == 0 {
+		return server.PushServer(client)
+	} else {
+		// 获取是否存在
+		con := server.GetServer(client.GetId())
+		if con != nil {
+			logger.LOG.Info(fmt.Sprintf("push server  %d", client.GetId()))
+			return 0
+		} else {
+			server.PushServer(client)
+		}
+		return client.GetId()
+	}
 }
 
 func (s *Servers) GetOtherServer() []*message.TranServer {
@@ -58,14 +73,24 @@ type Server struct {
 func (s *Server) GetRegister() []*message.TranServer {
 	reg := make([]*message.TranServer, 0)
 	for _, ser := range s.Conns {
-		reg = append(reg, ser.GetRegister())
+		if ser.Ready() {
+			reg = append(reg, ser.GetRegister())
+		}
 	}
 	return reg
 }
 
+// 利用map的随机性进行返回所需要的连接地址
+func (s *Server) GetRandRegister() *message.TranServer {
+	for _, v := range s.Conns {
+		return v.GetRegister()
+	}
+	return nil
+}
+
 func (s *Server) Send(data []byte) {
 	for _, v := range s.Conns {
-		v.Send(0, data)
+		v.Send(0, utils.SERVER, data)
 	}
 }
 
@@ -84,11 +109,17 @@ func (s *Server) RemoveServer(id uint32) bool {
 	return false
 }
 
-//加入控制并且返回ID
+// 加入控制并且返回ID
 func (s *Server) PushServer(conn utils.IServerLink) uint32 {
-	s.ID++
-	s.Conns[s.ID] = conn
-	return s.ID
+	if conn.GetId() == 0 {
+		s.ID++
+		s.ID %= 256
+		s.Conns[s.ID] = conn
+		return s.ID
+	} else {
+		s.Conns[conn.GetId()] = conn
+		return conn.GetId()
+	}
 }
 
 func CreateServers() *Servers {

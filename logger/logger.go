@@ -1,37 +1,12 @@
 package logger
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-func Info(a ...interface{}) {
-	LOG.Info(fmt.Sprint(a...))
-}
-
-func Error(a ...interface{}) {
-	LOG.Error(fmt.Sprint(a...))
-}
-
-func Panic(a ...interface{}) {
-	LOG.Panic(fmt.Sprint(a...))
-}
-
-func Debug(a ...interface{}) {
-	LOG.Debug(fmt.Sprint(a...))
-}
-
-func Warn(a ...interface{}) {
-	LOG.Warn(fmt.Sprint(a...))
-}
-
-func Fatal(a ...interface{}) {
-	LOG.Fatal(fmt.Sprint(a...))
-}
 
 var LOG *zap.Logger = nil
 
@@ -61,7 +36,7 @@ func init() {
 	kafkaEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
 	consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
 
-	// Join the outputs, encoders, and level-handling functions into
+	// Join the outputs, encodes, and level-handling functions into
 	// zapcore.Cores, then tee the four cores together.
 	core := zapcore.NewTee(
 		zapcore.NewCore(kafkaEncoder, topicErrors, highPriority),
